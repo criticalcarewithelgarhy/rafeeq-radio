@@ -32,9 +32,6 @@ jobs:
       - name: Prepare web assets
         run: npm run prepare:www
 
-      - name: Add Android platform
-        run: npx cap add android
-
       - name: Sync Capacitor
         run: npx cap sync android
 
