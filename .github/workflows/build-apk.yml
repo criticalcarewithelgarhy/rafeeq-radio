@@ -1,0 +1,78 @@
+name: Build Signed APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare web assets
+        run: npm run prepare:www
+
+      - name: Add Android platform
+        run: npx cap add android
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build Release APK
+        run: cd android && ./gradlew assembleRelease
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/rafeeq-release.keystore
+
+      - name: Sign APK
+        run: |
+          cd android/app/build/outputs/apk/release
+          $JAVA_HOME/bin/jarsigner \
+            -verbose \
+            -sigalg SHA256withRSA \
+            -digestalg SHA-256 \
+            -keystore $GITHUB_WORKSPACE/android/app/rafeeq-release.keystore \
+            -storepass "${{ secrets.STORE_PASSWORD }}" \
+            -keypass "${{ secrets.KEY_PASSWORD }}" \
+            app-release-unsigned.apk \
+            "${{ secrets.KEY_ALIAS }}"
+          $ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)/zipalign \
+            -v 4 app-release-unsigned.apk rafeeq-radio-signed.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rafeeq-radio-signed
+          path: android/app/build/outputs/apk/release/rafeeq-radio-signed.apk
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: android/app/build/outputs/apk/release/rafeeq-radio-signed.apk
+          name: Rafeeq Radio ${{ github.ref_name }}

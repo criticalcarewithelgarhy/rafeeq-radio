@@ -1,0 +1,21 @@
+{
+  "appId": "uk.elgarhy.rafeeq.radio",
+  "appName": "Rafeeq Radio",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#0d1220"
+  },
+  "server": {
+    "cleartext": true,
+    "allowNavigation": [
+      "*.radio-browser.info",
+      "*.mp3quran.net",
+      "radioproxy.elgarhy.uk",
+      "*.flagcdn.com",
+      "fonts.googleapis.com",
+      "fonts.gstatic.com",
+      "cdn.jsdelivr.net"
+    ]
+  }
+}

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>رفيق · راديو</title>
+  <script>
+    /* TV mode on Samsung/LG TVs (or ?tv=1 on a computer to preview it); otherwise computer or phone layout. */
+    (function () {
+      var tv = !!window.tizen || /[?&]tv=1/.test(location.search) || /Tizen|Web0S|SMART-TV|SmartTV/i.test(navigator.userAgent);
+      if (tv) document.documentElement.className += " tv";
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0d1220">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="رفيق">
+  <link rel="apple-touch-icon" href="assets/icon.png">
+</head>
+<body>
+  <div id="app">
+    <header class="top">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">رفيق</span>
+        <span class="brand-sub">راديو وقرآن</span>
+        <span class="brand-count" id="dir-count"></span>
+      </div>
+      <div class="top-tools">
+        <span id="sleep-badge" class="badge" hidden></span>
+        <span id="alarm-badge" class="badge badge-alarm" hidden></span>
+        <button class="chip focusable" id="btn-prayer" data-action="prayer-toggle" hidden>الصلاة</button>
+        <span id="prayer-next" class="prayer-next" hidden></span>
+        <button class="chip focusable" id="btn-alarm" data-action="alarm-toggle">منبه</button>
+        <button class="chip focusable" id="btn-textsize" data-action="textsize">تكبير الخط</button>
+        <time id="clock" class="clock">--:--</time>
+      </div>
+      <div id="alarm-panel" class="alarm-panel" hidden>
+        <input type="time" id="alarm-time" class="focusable">
+        <select id="alarm-station" class="focusable">
+          <option value="">آخر محطة</option>
+          <option value="quran">القرآن الكريم</option>
+        </select>
+        <button class="chip focusable" data-action="alarm-set">تعيين</button>
+        <button class="chip focusable" data-action="alarm-cancel">إلغاء المنبه</button>
+      </div>
+      <div id="prayer-panel" class="prayer-panel" hidden>
+        <select id="prayer-city" class="focusable"></select>
+        <label class="prayer-opt"><input type="checkbox" id="prayer-pause"> إيقاف عند الأذان</label>
+        <button class="chip focusable" data-action="prayer-close">حسناً</button>
+      </div>
+    </header>
+
+    <nav class="cats" id="cats" aria-label="الأقسام"></nav>
+
+    <main class="content">
+      <div class="content-head">
+        <h1 id="list-title">المفضلة</h1>
+        <span id="list-sub" class="muted"></span>
+      </div>
+      <div id="search-row" class="search-row" hidden>
+        <div class="search-wrap">
+          <input id="search-input" class="focusable" type="search" dir="auto" placeholder="اسم المحطة أو نوعها… مثل: نجوم، قرآن، jazz، BBC" autocomplete="off">
+          <button id="search-clear" class="search-clear" data-action="search-clear" aria-label="مسح" hidden>✕</button>
+        </div>
+        <button class="chip focusable" data-action="do-search">بحث</button>
+      </div>
+      <div id="local-filter-row" class="local-filter-row" hidden>
+        <div class="search-wrap">
+          <input id="local-filter" class="focusable" type="search" dir="auto" placeholder="بحث في هذه القائمة…" autocomplete="off">
+          <button id="local-filter-clear" class="search-clear" data-action="local-filter-clear" aria-label="مسح" hidden>✕</button>
+        </div>
+      </div>
+      <div id="grid" class="grid" role="list"></div>
+      <p id="empty" class="empty" hidden></p>
+    </main>
+
+    <footer class="now" id="now">
+      <div class="now-art" id="now-art" aria-hidden="true"></div>
+      <div class="now-text">
+        <div class="now-name" id="now-name">اختر محطة</div>
+        <div class="now-status" id="now-status"></div>
+      </div>
+      <div class="eq" id="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="now-actions">
+        <button class="act focusable" data-action="toggle" id="btn-toggle">تشغيل</button>
+        <button class="act focusable" data-action="fav-current" id="btn-fav">★ للمفضلة</button>
+        <button class="act focusable" data-action="sleep" id="btn-sleep">مؤقت النوم</button>
+        <button class="act focusable" data-action="screen-off">إطفاء الشاشة</button>
+        <button class="act focusable" data-action="share" id="btn-share">مشاركة</button>
+        <button class="act focusable" data-action="report-broken" id="btn-broken">لا تعمل</button>
+      </div>
+    </footer>
+
+    <div class="legend" aria-hidden="true">
+      <span><b class="k red"></b>مفضلة</span>
+      <span><b class="k green"></b>مؤقت النوم</span>
+      <span><b class="k yellow"></b>إطفاء الشاشة</span>
+      <span><b class="k blue"></b>بحث</span>
+      <span><b class="k num">1–9</b>محطاتك المفضلة</span>
+      <span><b class="k num">CH ▲▼</b>المحطة التالية</span>
+    </div>
+  </div>
+
+  <div id="screen-off" class="screen-off" hidden>
+    <div class="so-clock" id="so-clock"></div>
+    <div class="so-name" id="so-name"></div>
+    <div class="so-hint">اضغط أي زر للرجوع</div>
+  </div>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <audio id="audio" preload="none"></audio>
+
+  <script src="js/stations-seed.js"></script>
+  <script src="js/countries-ar.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/sources.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/prayer.js"></script>
+  <script src="js/alarm.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
+</body>
+</html>

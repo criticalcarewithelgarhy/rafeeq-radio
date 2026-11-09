@@ -1,0 +1,22 @@
+{
+  "name": "رفيق · راديو وقرآن",
+  "short_name": "رفيق",
+  "description": "راديو عربي وقرآن كريم",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d1220",
+  "theme_color": "#0d1220",
+  "icons": [
+    {
+      "src": "assets/icon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["music", "entertainment"],
+  "prefer_related_applications": false
+}
