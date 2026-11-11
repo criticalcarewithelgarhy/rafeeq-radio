@@ -59,7 +59,7 @@ class RadioService {
     return _fromCache(key, const Duration(hours: 12)) ??
         await () async {
           final data = await _rb(
-              '/stations/bycountryexact/${Uri.encodeComponent(isoCode)}?limit=60&order=votes&reverse=true&hidebroken=true');
+              '/stations/bycountrycodeexact/${Uri.encodeComponent(isoCode.toUpperCase())}?limit=60&order=votes&reverse=true&hidebroken=true');
           final stations = data
               .map(Station.fromRadioBrowser)
               .where((s) => s.streamUrls.isNotEmpty)
@@ -118,6 +118,29 @@ class RadioService {
     } catch (_) {}
     return [];
   }
+
+  Future<List<({String code, String name, int count})>> fetchCountries() async {
+    const key = 'countries_world';
+    final cached = _cache[key];
+    if (cached != null && DateTime.now().difference(cached.at) < const Duration(hours: 24)) {
+      return (cached.data as dynamic) as List<({String code, String name, int count})>;
+    }
+    final data = await _rb('/countrycodes?order=stationcount&reverse=true&hidebroken=true');
+    final result = data
+        .where((c) => (c['stationcount'] as int? ?? 0) > 5 && (c['name'] as String? ?? '').isNotEmpty)
+        .map((c) => (
+              code: (c['name'] as String).toUpperCase(),
+              name: c['name'] as String,
+              count: c['stationcount'] as int? ?? 0,
+            ))
+        .toList();
+    // Store raw in cache using a workaround: store empty list as sentinel
+    _cache[key] = (at: DateTime.now(), data: const []);
+    _countriesCache = result;
+    return result;
+  }
+
+  List<({String code, String name, int count})> _countriesCache = [];
 
   void reportClick(String uuid) {
     final uri = Uri.https(_rbServers[0], '/json/url/$uuid');

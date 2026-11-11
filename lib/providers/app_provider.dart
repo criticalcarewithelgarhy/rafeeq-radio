@@ -127,8 +127,15 @@ class AppNotifier extends StateNotifier<AppState> {
           final stations = await rs.fetchTopCharts();
           state = state.copyWith(stations: stations, loading: false);
         case 'countries_ar':
-          state = state.copyWith(
-              folders: arabicCountries, loading: false);
+          state = state.copyWith(folders: arabicCountries, loading: false);
+        case 'countries_world':
+          final countries = await rs.fetchCountries();
+          final folders = countries.map((c) => FolderItem(
+            id: c.code,
+            name: c.name,
+            emoji: _countryEmoji(c.code),
+          )).toList();
+          state = state.copyWith(folders: folders, loading: false);
         case 'genres':
           state = state.copyWith(folders: genres, loading: false);
         case 'news':
@@ -158,7 +165,7 @@ class AppNotifier extends StateNotifier<AppState> {
     try {
       final rs = _ref.read(radioServiceProvider);
       List<Station> stations;
-      if (state.categoryId == 'countries_ar') {
+      if (state.categoryId == 'countries_ar' || state.categoryId == 'countries_world') {
         stations = await rs.fetchByCountry(id);
       } else {
         stations = await rs.fetchByTag(id);
@@ -186,13 +193,23 @@ class AppNotifier extends StateNotifier<AppState> {
   }
 
   void goBack() {
-    state = state.copyWith(
-        clearFolder: true, stations: [], folders: []);
+    state = state.copyWith(clearFolder: true, stations: [], folders: []);
     if (state.categoryId == 'countries_ar') {
       state = state.copyWith(folders: AppNotifier.arabicCountries);
     } else if (state.categoryId == 'genres') {
       state = state.copyWith(folders: AppNotifier.genres);
+    } else if (state.categoryId == 'countries_world') {
+      loadCategory('countries_world');
     }
+  }
+
+  static String _countryEmoji(String code) {
+    if (code.length != 2) return '🌐';
+    final base = 0x1F1E6 - 0x41;
+    return String.fromCharCodes([
+      base + code.codeUnitAt(0),
+      base + code.codeUnitAt(1),
+    ]);
   }
 
   Future<void> refreshFavorites() async {

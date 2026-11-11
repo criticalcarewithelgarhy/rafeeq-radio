@@ -12,6 +12,7 @@ class CategoryBar extends ConsumerWidget {
     ('quran', '☽ القرآن'),
     ('topcharts', '🔥 الأكثر'),
     ('countries_ar', '🗺 عربي'),
+    ('countries_world', '🌍 العالم'),
     ('news', '📰 أخبار'),
     ('sports', '⚽ رياضة'),
     ('genres', '🎵 أنواع'),
