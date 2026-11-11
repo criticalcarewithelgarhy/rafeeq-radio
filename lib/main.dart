@@ -12,20 +12,15 @@ Future<void> main() async {
   FlutterError.onError = FlutterError.presentError;
   PlatformDispatcher.instance.onError = (_, __) => true;
 
-  RadioAudioHandler handler;
-  try {
-    handler = await AudioService.init(
-      builder: () => RadioAudioHandler(),
-      config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.rafeeq.radio.audio',
-        androidNotificationChannelName: 'رفيق راديو',
-        androidNotificationOngoing: true,
-        androidStopForegroundOnPause: true,
-      ),
-    );
-  } catch (_) {
-    handler = RadioAudioHandler();
-  }
+  final handler = await AudioService.init(
+    builder: () => RadioAudioHandler(),
+    config: const AudioServiceConfig(
+      androidNotificationChannelId: 'com.rafeeq.radio.audio',
+      androidNotificationChannelName: 'رفيق راديو',
+      androidNotificationOngoing: true,
+      androidStopForegroundOnPause: true,
+    ),
+  );
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
