@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import '../models/station.dart';
@@ -66,7 +67,16 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
 
     for (final url in station.streamUrls) {
       try {
-        await _player.setAudioSource(AudioSource.uri(Uri.parse(url)));
+        await _player.setAudioSource(AudioSource.uri(
+          Uri.parse(url),
+          tag: MediaItem(
+            id: station.id,
+            title: station.name,
+            artUri: (station.logoUrl?.isNotEmpty == true)
+                ? Uri.tryParse(station.logoUrl!)
+                : null,
+          ),
+        ));
         // Wait for ready or error; just_audio play() doesn't throw on stream failure
         final ready = await _player.playerStateStream
             .firstWhere((ps) =>
