@@ -11,8 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   just_audio: ^0.9.40
-  just_audio_background: ^0.0.1-beta.12
-  audio_service: ^0.18.0
+  flutter_foreground_task: ^8.0.0
   http: ^1.2.2
   shared_preferences: ^2.3.1
   cached_network_image: ^3.4.0
