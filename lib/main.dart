@@ -11,12 +11,14 @@ Future<void> main() async {
   FlutterError.onError = FlutterError.presentError;
   PlatformDispatcher.instance.onError = (_, __) => true;
 
-  await JustAudioBackground.init(
-    androidNotificationChannelId: 'com.rafeeq.radio.audio',
-    androidNotificationChannelName: 'رفيق راديو',
-    androidNotificationOngoing: true,
-    androidStopForegroundOnPause: true,
-  );
+  try {
+    await JustAudioBackground.init(
+      androidNotificationChannelId: 'com.rafeeq.radio.audio',
+      androidNotificationChannelName: 'رفيق راديو',
+      androidNotificationOngoing: true,
+      androidStopForegroundOnPause: true,
+    );
+  } catch (_) {}
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
