@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'package:audio_service/audio_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_background/just_audio_background.dart';
 import '../models/station.dart';
 import '../services/radio_service.dart';
 import '../services/storage_service.dart';
@@ -68,17 +66,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     for (final url in station.streamUrls) {
       try {
         await _player.setAudioSource(
-          AudioSource.uri(
-            Uri.parse(url),
-            tag: MediaItem(
-              id: station.id,
-              title: station.name,
-              artist: station.tags ?? '',
-              artUri: station.logoUrl != null
-                  ? Uri.parse(station.logoUrl!)
-                  : null,
-            ),
-          ),
+          AudioSource.uri(Uri.parse(url)),
         );
         await _player.play();
         if (station.uuid != null) {
