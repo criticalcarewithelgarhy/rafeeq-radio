@@ -1,14 +1,31 @@
 import 'dart:ui';
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
+import 'services/audio_handler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   FlutterError.onError = FlutterError.presentError;
   PlatformDispatcher.instance.onError = (_, __) => true;
+
+  RadioAudioHandler handler;
+  try {
+    handler = await AudioService.init(
+      builder: () => RadioAudioHandler(),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.rafeeq.radio.audio',
+        androidNotificationChannelName: 'رفيق راديو',
+        androidNotificationOngoing: true,
+        androidStopForegroundOnPause: true,
+      ),
+    );
+  } catch (_) {
+    handler = RadioAudioHandler();
+  }
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
@@ -17,5 +34,8 @@ Future<void> main() async {
     systemNavigationBarIconBrightness: Brightness.light,
   ));
 
-  runApp(const ProviderScope(child: RafeeqApp()));
+  runApp(ProviderScope(
+    overrides: [audioHandlerProvider.overrideWithValue(handler)],
+    child: const RafeeqApp(),
+  ));
 }
