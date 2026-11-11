@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   static const bg = Color(0xFF0d1220);
@@ -13,16 +12,11 @@ class AppColors {
 }
 
 class AppTheme {
-  static ThemeData get theme {
-    final base = ThemeData.dark();
-    final textTheme = GoogleFonts.notoKufiArabicTextTheme(base.textTheme).apply(
-      bodyColor: AppColors.ink,
-      displayColor: AppColors.ink,
-    );
+  static const _arabic = 'sans-serif';
 
-    return base.copyWith(
+  static ThemeData get theme {
+    return ThemeData.dark().copyWith(
       scaffoldBackgroundColor: AppColors.bg,
-      textTheme: textTheme,
       colorScheme: const ColorScheme.dark(
         primary: AppColors.gold,
         secondary: AppColors.teal,
@@ -33,22 +27,32 @@ class AppTheme {
         onSurface: AppColors.ink,
         onError: AppColors.ink,
       ),
-      appBarTheme: AppBarTheme(
+      textTheme: const TextTheme(
+        displayLarge: TextStyle(fontFamily: _arabic, color: AppColors.ink),
+        displayMedium: TextStyle(fontFamily: _arabic, color: AppColors.ink),
+        displaySmall: TextStyle(fontFamily: _arabic, color: AppColors.ink),
+        headlineLarge: TextStyle(fontFamily: _arabic, color: AppColors.ink),
+        headlineMedium: TextStyle(fontFamily: _arabic, color: AppColors.ink),
+        headlineSmall: TextStyle(fontFamily: _arabic, color: AppColors.ink),
+        titleLarge: TextStyle(fontFamily: _arabic, color: AppColors.ink, fontWeight: FontWeight.w600),
+        titleMedium: TextStyle(fontFamily: _arabic, color: AppColors.ink),
+        titleSmall: TextStyle(fontFamily: _arabic, color: AppColors.ink),
+        bodyLarge: TextStyle(fontFamily: _arabic, color: AppColors.ink),
+        bodyMedium: TextStyle(fontFamily: _arabic, color: AppColors.ink),
+        bodySmall: TextStyle(fontFamily: _arabic, color: AppColors.muted),
+        labelLarge: TextStyle(fontFamily: _arabic, color: AppColors.ink),
+        labelMedium: TextStyle(fontFamily: _arabic, color: AppColors.muted),
+        labelSmall: TextStyle(fontFamily: _arabic, color: AppColors.muted),
+      ),
+      appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.bg,
         elevation: 0,
         foregroundColor: AppColors.ink,
-        titleTextStyle: GoogleFonts.notoKufiArabic(
-          color: AppColors.ink,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
       ),
       cardTheme: CardTheme(
         color: AppColors.card,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: EdgeInsets.zero,
       ),
       bottomSheetTheme: const BottomSheetThemeData(
@@ -63,6 +67,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.card,
+        hintStyle: const TextStyle(color: AppColors.muted),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.divider),
@@ -75,16 +81,11 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.gold, width: 1.5),
         ),
-        hintStyle: GoogleFonts.notoKufiArabic(color: AppColors.muted),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.card,
         selectedColor: AppColors.gold.withAlpha(26),
-        labelStyle: GoogleFonts.notoKufiArabic(
-          color: AppColors.muted,
-          fontSize: 13,
-        ),
+        labelStyle: const TextStyle(color: AppColors.muted, fontSize: 13),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
@@ -93,7 +94,7 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.card,
-        contentTextStyle: GoogleFonts.notoKufiArabic(color: AppColors.ink),
+        contentTextStyle: const TextStyle(color: AppColors.ink),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         behavior: SnackBarBehavior.floating,
       ),
