@@ -53,7 +53,8 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
       } else if (ps.processingState == ProcessingState.loading ||
           ps.processingState == ProcessingState.buffering) {
         state = state.copyWith(loading: true);
-      } else if (ps.processingState == ProcessingState.completed) {
+      } else if (ps.processingState == ProcessingState.completed ||
+          ps.processingState == ProcessingState.idle) {
         state = state.copyWith(playing: false, loading: false);
       }
     });
@@ -65,20 +66,24 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
 
     for (final url in station.streamUrls) {
       try {
-        await _player.setAudioSource(
-          AudioSource.uri(Uri.parse(url)),
-        );
-        await _player.play();
-        if (station.uuid != null) {
-          _ref.read(radioServiceProvider).reportClick(station.uuid!);
+        await _player.setAudioSource(AudioSource.uri(Uri.parse(url)));
+        // Wait for ready or error; just_audio play() doesn't throw on stream failure
+        final ready = await _player.playerStateStream
+            .firstWhere((ps) =>
+                ps.processingState == ProcessingState.ready ||
+                ps.processingState == ProcessingState.idle)
+            .timeout(const Duration(seconds: 15));
+        if (ready.processingState == ProcessingState.ready) {
+          await _player.play();
+          if (station.uuid != null) {
+            _ref.read(radioServiceProvider).reportClick(station.uuid!);
+          }
+          return;
         }
-        return;
       } catch (_) {}
     }
     state = state.copyWith(
-        loading: false,
-        error: 'تعذّر تشغيل المحطة',
-        clearStation: false);
+        loading: false, error: 'تعذّر تشغيل المحطة', clearStation: false);
   }
 
   Future<void> togglePlayPause() async {
