@@ -25,12 +25,14 @@ class MainActivity : FlutterActivity() {
     private val MEDIA_CHANNEL_ID = "rafeeq_media_controls"
     private val MEDIA_NOTIF_ID = 9001
     private val ACTION_TOGGLE = "uk.elgarhy.rafeeq.radio.TOGGLE"
+    private val ACTION_NEXT = "uk.elgarhy.rafeeq.radio.NEXT"
     private var currentTitle = "رفيق راديو"
 
     private val toggleReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == ACTION_TOGGLE) {
-                channel.invokeMethod("onToggle", null)
+            when (intent.action) {
+                ACTION_TOGGLE -> channel.invokeMethod("onToggle", null)
+                ACTION_NEXT -> channel.invokeMethod("onNext", null)
             }
         }
     }
@@ -40,11 +42,15 @@ class MainActivity : FlutterActivity() {
 
         createNotificationChannel()
 
+        val filter = IntentFilter().apply {
+            addAction(ACTION_TOGGLE)
+            addAction(ACTION_NEXT)
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(toggleReceiver, IntentFilter(ACTION_TOGGLE), RECEIVER_NOT_EXPORTED)
+            registerReceiver(toggleReceiver, filter, RECEIVER_NOT_EXPORTED)
         } else {
             @Suppress("UnspecifiedRegisterReceiverFlag")
-            registerReceiver(toggleReceiver, IntentFilter(ACTION_TOGGLE))
+            registerReceiver(toggleReceiver, filter)
         }
 
         mediaSession = MediaSession(this, "RafeeqRadio")
@@ -56,6 +62,7 @@ class MainActivity : FlutterActivity() {
             override fun onPlay() { channel.invokeMethod("onToggle", null) }
             override fun onPause() { channel.invokeMethod("onToggle", null) }
             override fun onStop() { channel.invokeMethod("onToggle", null) }
+            override fun onSkipToNext() { channel.invokeMethod("onNext", null) }
         })
         mediaSession.isActive = true
 
@@ -80,7 +87,8 @@ class MainActivity : FlutterActivity() {
                             .setActions(
                                 PlaybackState.ACTION_PLAY or
                                 PlaybackState.ACTION_PAUSE or
-                                PlaybackState.ACTION_PLAY_PAUSE
+                                PlaybackState.ACTION_PLAY_PAUSE or
+                                PlaybackState.ACTION_SKIP_TO_NEXT
                             )
                             .setState(
                                 if (playing) PlaybackState.STATE_PLAYING
@@ -116,11 +124,20 @@ class MainActivity : FlutterActivity() {
         )
     }
 
+    private fun nextPendingIntent(): PendingIntent {
+        val intent = Intent(ACTION_NEXT).setPackage(packageName)
+        return PendingIntent.getBroadcast(
+            this, 1, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
     private fun showMediaNotification(title: String, playing: Boolean) {
-        val pi = togglePendingIntent()
-        val iconRes = if (playing) android.R.drawable.ic_media_pause
-                      else android.R.drawable.ic_media_play
-        val label = if (playing) "إيقاف" else "تشغيل"
+        val togglePi = togglePendingIntent()
+        val nextPi = nextPendingIntent()
+        val playPauseIcon = if (playing) android.R.drawable.ic_media_pause
+                            else android.R.drawable.ic_media_play
+        val playPauseLabel = if (playing) "إيقاف" else "تشغيل"
         val statusText = if (playing) "▶ يعزف الآن" else "⏸ متوقف"
 
         val notification = Notification.Builder(this, MEDIA_CHANNEL_ID)
@@ -131,11 +148,16 @@ class MainActivity : FlutterActivity() {
             .setStyle(
                 Notification.MediaStyle()
                     .setMediaSession(mediaSession.sessionToken)
-                    .setShowActionsInCompactView(0)
+                    .setShowActionsInCompactView(0, 1)
             )
             .addAction(
                 Notification.Action.Builder(
-                    Icon.createWithResource(this, iconRes), label, pi
+                    Icon.createWithResource(this, playPauseIcon), playPauseLabel, togglePi
+                ).build()
+            )
+            .addAction(
+                Notification.Action.Builder(
+                    Icon.createWithResource(this, android.R.drawable.ic_media_next), "التالي", nextPi
                 ).build()
             )
             .build()

@@ -3,6 +3,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import '../models/station.dart';
+import '../providers/app_provider.dart';
 import '../services/media_session_service.dart';
 import '../services/radio_service.dart';
 import '../services/storage_service.dart';
@@ -53,6 +54,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
 
     // Wire lock screen / notification media button callbacks
     _ref.read(mediaSessionServiceProvider).onToggle = () => togglePlayPause();
+    _ref.read(mediaSessionServiceProvider).onNext = () => nextStation();
 
     _player.playerStateStream.listen((ps) {
       if (ps.processingState == ProcessingState.ready) {
@@ -166,6 +168,21 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
       await _updateNotification();
       _ref.read(mediaSessionServiceProvider).updateState(true);
     }
+  }
+
+  Future<void> nextStation() async {
+    final stations = _ref.read(appProvider).stations;
+    final current = state.station;
+    if (stations.isEmpty) return;
+    if (current == null) {
+      await play(stations.first);
+      return;
+    }
+    final idx = stations.indexWhere((s) => s.id == current.id);
+    final next = (idx == -1 || idx >= stations.length - 1)
+        ? stations.first
+        : stations[idx + 1];
+    await play(next);
   }
 
   void setSleepTimer(Duration duration) {

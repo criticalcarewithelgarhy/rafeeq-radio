@@ -5,10 +5,12 @@ class MediaSessionService {
   static const _channel = MethodChannel('com.rafeeq.radio/media_session');
 
   void Function()? onToggle;
+  void Function()? onNext;
 
   MediaSessionService() {
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'onToggle') onToggle?.call();
+      if (call.method == 'onNext') onNext?.call();
     });
   }
 
