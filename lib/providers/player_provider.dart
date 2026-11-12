@@ -81,9 +81,6 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
         channelName: 'رفيق راديو',
         channelImportance: NotificationChannelImportance.LOW,
         priority: NotificationPriority.LOW,
-        buttons: [
-          const TaskButton(id: 'toggle', text: '⏸ / ▶'),
-        ],
       ),
       iosNotificationOptions: const IOSNotificationOptions(),
       foregroundTaskOptions: ForegroundTaskOptions(
