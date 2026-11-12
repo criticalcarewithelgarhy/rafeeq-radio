@@ -92,6 +92,8 @@ class RadioService {
     const key = 'quran';
     final cached = _fromCache(key, const Duration(hours: 24));
     if (cached != null) return cached;
+
+    // Try mp3quran.net first
     try {
       final res = await http
           .get(Uri.parse('https://www.mp3quran.net/api/v3/radios?language=Arabic'), headers: _headers)
@@ -104,11 +106,18 @@ class RadioService {
             .map(Station.fromQuran)
             .where((s) => s.streamUrls.isNotEmpty)
             .toList();
-        _toCache(key, stations);
-        return stations;
+        if (stations.isNotEmpty) {
+          _toCache(key, stations);
+          return stations;
+        }
       }
     } catch (_) {}
-    return [];
+
+    // Fallback: Radio Browser quran tag
+    final data = await _rb('/stations/bytag/quran?limit=60&order=votes&reverse=true&hidebroken=true');
+    final stations = data.map(Station.fromRadioBrowser).where((s) => s.streamUrls.isNotEmpty).toList();
+    if (stations.isNotEmpty) _toCache(key, stations);
+    return stations;
   }
 
   Future<List<CountryItem>> fetchCountries() async {
