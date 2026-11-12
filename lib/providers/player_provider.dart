@@ -1,9 +1,8 @@
 import 'dart:async';
-import 'package:audio_service/audio_service.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import '../models/station.dart';
-import '../services/audio_handler.dart';
 import '../services/radio_service.dart';
 import '../services/storage_service.dart';
 
@@ -43,29 +42,87 @@ class PlayerState {
 }
 
 class PlayerNotifier extends StateNotifier<PlayerState> {
-  late final RadioAudioHandler _handler;
+  final AudioPlayer _player = AudioPlayer();
   final Ref _ref;
   Timer? _sleepTimer;
 
   PlayerNotifier(this._ref) : super(const PlayerState()) {
-    _handler = _ref.read(audioHandlerProvider);
+    _initForegroundTask();
+    FlutterForegroundTask.addTaskDataCallback(_onNotificationButton);
 
-    _handler.playerStateStream.listen((ps) {
+    _player.playerStateStream.listen((ps) {
       if (ps.processingState == ProcessingState.ready) {
         state = state.copyWith(
             loading: false, playing: ps.playing, clearError: true);
+        _updateNotification();
       } else if (ps.processingState == ProcessingState.loading ||
           ps.processingState == ProcessingState.buffering) {
         state = state.copyWith(loading: true);
       } else if (ps.processingState == ProcessingState.completed ||
           ps.processingState == ProcessingState.idle) {
         state = state.copyWith(playing: false, loading: false);
+        _updateNotification();
       }
     });
 
-    _handler.playbackEventStream.listen((_) {}, onError: (e) {
+    _player.playbackEventStream.listen((_) {}, onError: (e) {
       state = state.copyWith(loading: false, error: 'تعذّر تشغيل المحطة');
     });
+  }
+
+  void _onNotificationButton(dynamic data) {
+    if (data == 'toggle') togglePlayPause();
+  }
+
+  void _initForegroundTask() {
+    FlutterForegroundTask.init(
+      androidNotificationOptions: AndroidNotificationOptions(
+        channelId: 'rafeeq_radio_audio',
+        channelName: 'رفيق راديو',
+        channelImportance: NotificationChannelImportance.LOW,
+        priority: NotificationPriority.LOW,
+        buttons: [
+          const TaskButton(id: 'toggle', text: '⏸ / ▶'),
+        ],
+      ),
+      iosNotificationOptions: const IOSNotificationOptions(),
+      foregroundTaskOptions: ForegroundTaskOptions(
+        eventAction: ForegroundTaskEventAction.nothing(),
+        autoRunOnBoot: false,
+      ),
+    );
+  }
+
+  Future<void> _startForegroundTask(String stationName, bool playing) async {
+    final text = playing ? '▶ يعزف الآن' : '⏸ متوقف';
+    if (await FlutterForegroundTask.isRunningService) {
+      await FlutterForegroundTask.updateService(
+        notificationTitle: stationName,
+        notificationText: text,
+      );
+    } else {
+      await FlutterForegroundTask.startService(
+        notificationTitle: stationName,
+        notificationText: text,
+      );
+    }
+  }
+
+  Future<void> _updateNotification() async {
+    final station = state.station;
+    if (station == null) return;
+    if (!await FlutterForegroundTask.isRunningService) return;
+    final text = state.playing ? '▶ يعزف الآن' : '⏸ متوقف';
+    await FlutterForegroundTask.updateService(
+      notificationTitle: station.name,
+      notificationText: text,
+    );
+  }
+
+  Future<void> _stopForegroundTask() async {
+    if (await FlutterForegroundTask.isRunningService) {
+      await FlutterForegroundTask.stopService();
+    }
   }
 
   Future<void> play(Station station) async {
@@ -75,20 +132,13 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     bool started = false;
     for (final url in station.streamUrls) {
       try {
-        await _handler.playUrl(
-          url,
-          MediaItem(
-            id: station.id,
-            title: station.name,
-            artUri: (station.logoUrl?.isNotEmpty == true)
-                ? Uri.tryParse(station.logoUrl!)
-                : null,
-          ),
-        );
+        await _player.setAudioSource(AudioSource.uri(Uri.parse(url)));
+        await _player.play();
         started = true;
         if (station.uuid != null) {
           _ref.read(radioServiceProvider).reportClick(station.uuid!);
         }
+        await _startForegroundTask(station.name, true);
         break;
       } catch (_) {}
     }
@@ -100,12 +150,14 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
   }
 
   Future<void> togglePlayPause() async {
-    if (_handler.isPlaying) {
-      await _handler.pause();
+    if (_player.playing) {
+      await _player.pause();
       state = state.copyWith(playing: false);
+      await _updateNotification();
     } else {
-      await _handler.play();
+      await _player.play();
       state = state.copyWith(playing: true);
+      await _updateNotification();
     }
   }
 
@@ -116,7 +168,8 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
       final remaining = state.sleepRemaining;
       if (remaining == null || remaining.inSeconds <= 0) {
         t.cancel();
-        _handler.pause();
+        _player.pause();
+        _stopForegroundTask();
         state = state.copyWith(playing: false, clearSleep: true);
         return;
       }
@@ -132,8 +185,10 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
 
   @override
   void dispose() {
+    FlutterForegroundTask.removeTaskDataCallback(_onNotificationButton);
     _sleepTimer?.cancel();
-    _handler.stop();
+    _player.dispose();
+    _stopForegroundTask();
     super.dispose();
   }
 }
