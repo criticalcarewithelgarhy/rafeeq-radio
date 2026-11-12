@@ -16,19 +16,18 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        mediaSession = MediaSessionCompat(this, "RafeeqRadio").apply {
-            setFlags(
-                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
-                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
-            )
-            setCallback(object : MediaSessionCompat.Callback() {
-                override fun onPlay() { channel.invokeMethod("onToggle", null) }
-                override fun onPause() { channel.invokeMethod("onToggle", null) }
-                override fun onPlayPause() { channel.invokeMethod("onToggle", null) }
-                override fun onStop() { channel.invokeMethod("onToggle", null) }
-            })
-            isActive = true
-        }
+        mediaSession = MediaSessionCompat(this, "RafeeqRadio")
+        mediaSession.setFlags(
+            MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+            MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
+        )
+        mediaSession.setCallback(object : MediaSessionCompat.Callback() {
+            override fun onPlay() { channel.invokeMethod("onToggle", null) }
+            override fun onPause() { channel.invokeMethod("onToggle", null) }
+            override fun onPlayPause() { channel.invokeMethod("onToggle", null) }
+            override fun onStop() { channel.invokeMethod("onToggle", null) }
+        })
+        mediaSession.isActive = true
 
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
         channel.setMethodCallHandler { call, result ->
