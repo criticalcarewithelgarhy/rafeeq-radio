@@ -3,6 +3,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import '../models/station.dart';
+import '../services/media_session_service.dart';
 import '../services/radio_service.dart';
 import '../services/storage_service.dart';
 
@@ -50,11 +51,15 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     _initForegroundTask();
     FlutterForegroundTask.addTaskDataCallback(_onNotificationButton);
 
+    // Wire lock screen / notification media button callbacks
+    _ref.read(mediaSessionServiceProvider).onToggle = () => togglePlayPause();
+
     _player.playerStateStream.listen((ps) {
       if (ps.processingState == ProcessingState.ready) {
         state = state.copyWith(
             loading: false, playing: ps.playing, clearError: true);
         _updateNotification();
+        _ref.read(mediaSessionServiceProvider).updateState(ps.playing);
       } else if (ps.processingState == ProcessingState.loading ||
           ps.processingState == ProcessingState.buffering) {
         state = state.copyWith(loading: true);
@@ -62,6 +67,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
           ps.processingState == ProcessingState.idle) {
         state = state.copyWith(playing: false, loading: false);
         _updateNotification();
+        _ref.read(mediaSessionServiceProvider).updateState(false);
       }
     });
 
@@ -136,6 +142,8 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
           _ref.read(radioServiceProvider).reportClick(station.uuid!);
         }
         await _startForegroundTask(station.name, true);
+        _ref.read(mediaSessionServiceProvider).updateMetadata(station.name);
+        _ref.read(mediaSessionServiceProvider).updateState(true);
         break;
       } catch (_) {}
     }
@@ -151,10 +159,12 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
       await _player.pause();
       state = state.copyWith(playing: false);
       await _updateNotification();
+      _ref.read(mediaSessionServiceProvider).updateState(false);
     } else {
       await _player.play();
       state = state.copyWith(playing: true);
       await _updateNotification();
+      _ref.read(mediaSessionServiceProvider).updateState(true);
     }
   }
 
